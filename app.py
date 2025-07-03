@@ -79,16 +79,18 @@ def insert_user_mysql(username, password):
 	)
 	cursor = conn.cursor()
 
-	cursor.execute("""
-	        INSERT INTO guacamole_entity (name, type)
-	        VALUES (%s,'USER')
-	        """, (username))
+	# Étape 1 : insérer dans guacamole_entity
+	cursor.execute("INSERT INTO guacamole_entity (name, type) VALUES (%s, 'USER')", (username,))
 
+	# Étape 2 : récupérer l'entity_id
+	cursor.execute("SELECT entity_id FROM guacamole_entity WHERE name = %s", (username,))
+	entity_id = cursor.fetchone()[0]
 
+	# Étape 3 : insérer dans guacamole_user
 	cursor.execute("""
-			INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled, expired)
-			VALUES (%s, UNHEX(SHA2(%s, 256)), '', NOW(), 0, 0)
-		""", (username, password))
+        INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled, expired)
+        VALUES (%s, UNHEX(SHA2(%s, 256)), '', NOW(), 0, 0)
+    """, (entity_id, password))
 
 	conn.commit()
 	cursor.close()
