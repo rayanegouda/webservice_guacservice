@@ -5,23 +5,33 @@ import string
 import time
 import pymysql
 import os
+import json
 from datetime import datetime
 
 app = Flask(__name__)
+
 
 # DynamoDB Setup
 dynamodb = boto3.resource('dynamodb', region_name="eu-north-1")
 table_name = os.getenv("DYNAMODB_TABLE", "guacamole_users")
 table = dynamodb.Table(table_name)
 
-# MySQL Guacamole Setup
-DB_HOST = os.getenv("MYSQL_HOST")
-DB_USER = os.getenv("MYSQL_USER")
-DB_PASS = os.getenv("MYSQL_PASS")
-DB_NAME = os.getenv("MYSQL_DB", "guacamole_db")
+
 
 def generate_password(length=10):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
+
+def get_mysql_credentials(secret_name, region):
+    client = boto3.client("secretsmanager", region_name=region)
+    response = client.get_secret_value(SecretId=secret_name)
+    return json.loads(response["SecretString"])
+
+
+# MySQL Guacamole Setup
+DB_HOST = get_mysql_credentials(os.getenv("MYSQL_HOST_SN"), os.getenv("REGION_AWS"))
+DB_USER = get_mysql_credentials(os.getenv("MYSQL_USER_SN"), os.getenv("REGION_AWS"))
+DB_PASS = get_mysql_credentials(os.getenv("MYSQL_PASS_SN"), os.getenv("REGION_AWS"))
+DB_NAME = get_mysql_credentials(os.getenv("MYSQL_DB_SN","guacamole_db"), os.getenv("REGION_AWS"))
 
 def insert_user_mysql(username, password):
     conn = pymysql.connect(
