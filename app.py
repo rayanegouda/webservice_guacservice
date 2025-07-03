@@ -7,8 +7,14 @@ import pymysql
 import os
 import json
 from datetime import datetime
+from botocore.config import Config
 
 app = Flask(__name__)
+
+aws_config = Config(
+    max_pool_connections=100,
+    retries={'max_attempts': 3}
+)
 
 
 # DynamoDB Setup
