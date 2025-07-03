@@ -79,7 +79,7 @@ def insert_user_mysql(username, password):
     cursor = conn.cursor()
 
     cursor.execute("""
-        INSERT INTO guacamole_user (username, password_hash, password_salt, password_date, disabled, expired)
+        INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled, expired)
         VALUES (%s, UNHEX(SHA2(%s, 256)), '', NOW(), 0, 0)
     """, (username, password))
 
