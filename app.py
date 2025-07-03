@@ -70,7 +70,7 @@ creds = get_db_credentials()
 DB_HOST = creds['host']
 DB_USER = creds['user']
 DB_PASS = creds['password']
-DB_NAME = gcreds['dbname']
+DB_NAME = creds['dbname']
 
 def insert_user_mysql(username, password):
     conn = pymysql.connect(
