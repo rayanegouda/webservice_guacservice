@@ -21,17 +21,50 @@ table = dynamodb.Table(table_name)
 def generate_password(length=10):
     return ''.join(random.choices(string.ascii_letters + string.digits, k=length))
 
-def get_mysql_credentials(secret_name, region):
-    client = boto3.client("secretsmanager", region_name=region)
-    response = client.get_secret_value(SecretId=secret_name)
+aws_config = Config(
+    max_pool_connections=100,
+    retries={'max_attempts': 3}
+)
+
+
+def get_secret_value(secret_id: str):
+    region_name = os.environ.get("AWS_REGION_NAME")
+    if not region_name:
+        raise RuntimeError("Missing AWS_REGION_NAME environment variable")
+
+    client = boto3.client(
+        "secretsmanager",
+        config=aws_config,
+        region_name=region_name,
+        aws_access_key_id=os.environ.get("AWS_ACCESS_KEY_ID"),
+        aws_secret_access_key=os.environ.get("AWS_SECRET_ACCESS_KEY"),
+    )
+    response = client.get_secret_value(SecretId=secret_id)
     return json.loads(response["SecretString"])
 
 
+def get_db_credentials():
+    secret_ids = {
+        "host": "rds-db-credentials/cluster-3MGGV2VUZDWQSJFDD6TQ4744HQ/admin/1748251685700",
+        "username": "rds!cluster-27e3f900-f4c4-44bc-a1e0-19cc44356684",
+        "password": "rds!cluster-27e3f900-f4c4-44bc-a1e0-19cc44356684",
+    }
+
+    return {
+        "host": get_secret_value(secret_ids["host"])["host"],
+        "port": 3306,
+        "user": get_secret_value(secret_ids["username"])["username"],
+        "password": get_secret_value(secret_ids["password"])["password"],
+        "dbname": "guacamole_db"
+    }
+
+creds = get_db_credentials()
+
 # MySQL Guacamole Setup
-DB_HOST = get_mysql_credentials(os.getenv("MYSQL_HOST_SN"), os.getenv("AWS_REGION"))
-DB_USER = get_mysql_credentials(os.getenv("MYSQL_USER_SN"), os.getenv("AWS_REGION"))
-DB_PASS = get_mysql_credentials(os.getenv("MYSQL_PASS_SN"), os.getenv("AWS_REGION"))
-DB_NAME = get_mysql_credentials(os.getenv("MYSQL_DB_SN","guacamole_db"), os.getenv("AWS_REGION"))
+DB_HOST = creds['host']
+DB_USER = creds['user']
+DB_PASS = creds['password']
+DB_NAME = gcreds['dbname']
 
 def insert_user_mysql(username, password):
     conn = pymysql.connect(
