@@ -81,8 +81,8 @@ def insert_user_mysql(username, password):
 
 	cursor.execute("""
 	        INSERT INTO guacamole_entity (name, type)
-	        VALUES (username,'USER')
-	        """)
+	        VALUES (%s,'USER')
+	        """, (username))
 
 
 	cursor.execute("""
