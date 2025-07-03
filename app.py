@@ -28,10 +28,10 @@ def get_mysql_credentials(secret_name, region):
 
 
 # MySQL Guacamole Setup
-DB_HOST = get_mysql_credentials(os.getenv("MYSQL_HOST_SN"), os.getenv("REGION_AWS"))
-DB_USER = get_mysql_credentials(os.getenv("MYSQL_USER_SN"), os.getenv("REGION_AWS"))
-DB_PASS = get_mysql_credentials(os.getenv("MYSQL_PASS_SN"), os.getenv("REGION_AWS"))
-DB_NAME = get_mysql_credentials(os.getenv("MYSQL_DB_SN","guacamole_db"), os.getenv("REGION_AWS"))
+DB_HOST = get_mysql_credentials(os.getenv("MYSQL_HOST_SN"), os.getenv("AWS_REGION"))
+DB_USER = get_mysql_credentials(os.getenv("MYSQL_USER_SN"), os.getenv("AWS_REGION"))
+DB_PASS = get_mysql_credentials(os.getenv("MYSQL_PASS_SN"), os.getenv("AWS_REGION"))
+DB_NAME = get_mysql_credentials(os.getenv("MYSQL_DB_SN","guacamole_db"), os.getenv("AWS_REGION"))
 
 def insert_user_mysql(username, password):
     conn = pymysql.connect(
