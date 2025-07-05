@@ -1,7 +1,6 @@
 from flask import Flask, request, jsonify
 import boto3
 import random
-import string
 import time
 import pymysql
 import os
@@ -12,6 +11,7 @@ import random
 import string
 import pymysql
 import logging
+import hashlib
 
 # Configuration
 logging.basicConfig(level=logging.INFO)
@@ -137,7 +137,6 @@ def insert_user_mysql(username, password):
 	entity_id = cursor.fetchone()[0]
 
 	# Étape 3 : insérer dans guacamole_user
-	import hashlib
 
 	hashed_password = hashlib.sha256(password.encode()).hexdigest()
 	cursor.execute("""
