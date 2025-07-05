@@ -5,3 +5,6 @@
 # ------> Mysql
 # ------> Dyanmodb
 # ----> Crée le user dans guacamole et l'insere
+# exemple: curl -X POST https://webservice-guacservice.onrender.com/create-user \
+#   -H "Content-Type: application/json" \
+#   -d '{"email": "testuser@example.com"}'
