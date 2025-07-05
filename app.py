@@ -8,6 +8,8 @@ import os
 import json
 from datetime import datetime
 from botocore.config import Config
+import random
+import string
 
 app = Flask(__name__)
 
@@ -20,6 +22,42 @@ aws_config = Config(
 dynamodb = boto3.resource('dynamodb', region_name="eu-north-1")
 table_name = os.getenv("DYNAMODB_TABLE", "guacamole_users")
 table = dynamodb.Table(table_name)
+
+
+def generate_random_username(base: str, length: int = 6):
+	suffix = ''.join(random.choices(string.ascii_lowercase + string.digits, k=length))
+	return f"{base}_{suffix}"
+
+
+def delete_dynamo_users_with_prefix(table, prefix):
+	scan = table.scan()
+	for item in scan.get("Items", []):
+		if item["username"].startswith(f"{prefix}_"):
+			table.delete_item(Key={"username": item["username"]})
+
+
+def delete_users_with_prefix(prefix):
+	conn = pymysql.connect(
+		host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME
+	)
+	cursor = conn.cursor()
+	# Récupérer les entity_id associés
+	entity_ids = conn.execute(text("""
+        SELECT entity_id FROM guacamole_entity
+        WHERE name LIKE :prefix
+    """), {"prefix": f"{prefix}_%"}).fetchall()
+
+	for eid in entity_ids:
+		conn.execute(text("""
+            DELETE FROM guacamole_user WHERE entity_id = :eid
+        """), {"eid": eid["entity_id"]})
+		conn.execute(text("""
+            DELETE FROM guacamole_entity WHERE entity_id = :eid
+        """), {"eid": eid["entity_id"]})
+
+	conn.commit()
+	cursor.close()
+	conn.close()
 
 
 def generate_password(length=10):
@@ -116,8 +154,14 @@ def create_user():
 
 	username = email.replace("@", "_").replace(".", "_")
 	password = generate_password()
+	username_prefix = username  # ou récupéré dynamiquement
+	username = generate_random_username(username_prefix)
 
 	try:
+		# Supprimer anciens comptes MySQL
+		delete_users_with_prefix(username_prefix)
+		# Supprimer anciens comptes DynamoDB
+		delete_dynamo_users_with_prefix(table, username_prefix)
 		insert_user_mysql(username, password)
 		store_user_dynamodb(username, password)
 		return jsonify({
