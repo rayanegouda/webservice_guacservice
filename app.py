@@ -91,39 +91,37 @@ DB_USER = creds['user']
 DB_PASS = creds['password']
 DB_NAME = creds['dbname']
 
-
 def delete_users_with_prefix(prefix):
-	try:
-		conn = pymysql.connect(
-			host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME
-		)
-		cursor = conn.cursor()
+    try:
+        conn = pymysql.connect(
+            host=DB_HOST, user=DB_USER, password=DB_PASS, database=DB_NAME
+        )
+        cursor = conn.cursor()
 
-	logging.info(f"🔍 Recherche des users avec prefix : {prefix}_%")
+        logging.info(f"🔍 Recherche des users avec prefix : {prefix}_%")
 
-	# Étape 1 : récupérer les entity_id associés
-	cursor.execute("""
+        # Étape 1 : récupérer les entity_id associés
+        cursor.execute("""
             SELECT entity_id FROM guacamole_entity
             WHERE name LIKE %s
         """, (f"{prefix}_%",))
-	entity_ids = cursor.fetchall()
+        entity_ids = cursor.fetchall()
 
-	logging.info(f"🧹 Utilisateurs trouvés à supprimer : {len(entity_ids)}")
+        logging.info(f"🧹 Utilisateurs trouvés à supprimer : {len(entity_ids)}")
 
-	# Étape 2 : suppression
-	for (eid,) in entity_ids:
-		cursor.execute("DELETE FROM guacamole_user WHERE entity_id = %s", (eid,))
-		cursor.execute("DELETE FROM guacamole_entity WHERE entity_id = %s", (eid,))
-		logging.info(f"✅ Supprimé entity_id : {eid}")
+        # Étape 2 : suppression
+        for (eid,) in entity_ids:
+            cursor.execute("DELETE FROM guacamole_user WHERE entity_id = %s", (eid,))
+            cursor.execute("DELETE FROM guacamole_entity WHERE entity_id = %s", (eid,))
+            logging.info(f"✅ Supprimé entity_id : {eid}")
 
-	conn.commit()
+        conn.commit()
 
-except Exception as e:
-logging.error(f"❌ Erreur lors de la suppression des utilisateurs : {str(e)}")
-finally:
-cursor.close()
-conn.close()
-
+    except Exception as e:
+        logging.error(f"❌ Erreur lors de la suppression des utilisateurs : {str(e)}")
+    finally:
+        cursor.close()
+        conn.close()
 
 def insert_user_mysql(username, password):
 	conn = pymysql.connect(
