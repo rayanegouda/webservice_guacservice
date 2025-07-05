@@ -137,10 +137,13 @@ def insert_user_mysql(username, password):
 	entity_id = cursor.fetchone()[0]
 
 	# Étape 3 : insérer dans guacamole_user
+	import hashlib
+
+	hashed_password = hashlib.sha256(password.encode()).hexdigest()
 	cursor.execute("""
-        INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled, expired)
-        VALUES (%s, UNHEX(SHA2(%s, 256)), '', NOW(), 0, 0)
-    """, (entity_id, password))
+	    INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date, disabled, expired)
+	    VALUES (%s, UNHEX(%s), '', NOW(), 0, 0)
+	""", (entity_id, hashed_password))
 
 	conn.commit()
 	cursor.close()
