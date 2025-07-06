@@ -109,8 +109,25 @@ def delete_users_with_prefix(prefix):
 
         logging.info(f"🧹 Utilisateurs trouvés à supprimer : {len(entity_ids)}")
 
-        # Étape 2 : suppression
         for (eid,) in entity_ids:
+            # Étape 2 : récupérer les connections liées à cet utilisateur
+            cursor.execute("""
+                SELECT connection_id FROM guacamole_connection_permission
+                WHERE entity_id = %s
+            """, (eid,))
+            connection_ids = cursor.fetchall()
+
+            for (cid,) in connection_ids:
+                # Supprimer les permissions de connexion
+                cursor.execute("DELETE FROM guacamole_connection_permission WHERE connection_id = %s", (cid,))
+                # Supprimer la connexion elle-même
+                cursor.execute("DELETE FROM guacamole_connection WHERE connection_id = %s", (cid,))
+                logging.info(f"🗑️ Supprimé connexion : {cid}")
+
+                # 🔥 Optionnel : supprimer VM EC2 associée
+                delete_ec2_by_connection_id(cid)
+
+            # Supprimer le user Guacamole
             cursor.execute("DELETE FROM guacamole_user WHERE entity_id = %s", (eid,))
             cursor.execute("DELETE FROM guacamole_entity WHERE entity_id = %s", (eid,))
             logging.info(f"✅ Supprimé entity_id : {eid}")
